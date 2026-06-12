@@ -736,7 +736,15 @@ function AdminLogin({ onLogin }) {
 }
 
 // Sidebar Component
-function Sidebar({ activeTab, setActiveTab, onLogout, role }) {
+function Sidebar({
+  activeTab,
+  setActiveTab,
+  onLogout,
+  role,
+  isMobile,
+  isOpen,
+  onClose,
+}) {
   const tabs = [
     { id: "overview", label: "Overview", icon: "📊" },
     { id: "users", label: "Users", icon: "👥" },
@@ -766,125 +774,175 @@ function Sidebar({ activeTab, setActiveTab, onLogout, role }) {
   const visibleTabs = roleTabs[role] || tabs;
 
   return (
-    <div
-      style={{
-        width: 260,
-        background: C.bg2,
-        borderRight: `1px solid ${C.border}`,
-        height: "100vh",
-        position: "fixed",
-        top: 64,
-        left: 0,
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <>
+      {isMobile && isOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 999,
+          }}
+          onClick={onClose}
+        />
+      )}
       <div
-        style={{ padding: "24px 16px", borderBottom: `1px solid ${C.border}` }}
+        style={{
+          width: isMobile ? 260 : 260,
+          background: C.bg2,
+          borderRight: `1px solid ${C.border}`,
+          height: "100vh",
+          position: isMobile ? "fixed" : "fixed",
+          top: isMobile ? 0 : 64,
+          left: isMobile ? (isOpen ? 0 : -260) : 0,
+          display: "flex",
+          flexDirection: "column",
+          zIndex: isMobile ? 1000 : 1,
+          transition: "left 0.3s ease",
+        }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+        <div
+          style={{
+            padding: "24px 16px",
+            borderBottom: `1px solid ${C.border}`,
+          }}
+        >
           <div
             style={{
-              width: 32,
-              height: 32,
-              background: `linear-gradient(135deg, ${C.gold}, ${C.goldMuted})`,
-              borderRadius: 8,
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
+              justifyContent: "space-between",
+              gap: 9,
             }}
           >
-            <span
-              style={{
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: 16,
-                fontFamily: "serif",
-              }}
-            >
-              V
-            </span>
-          </div>
-          <div>
-            <span
-              style={{
-                fontFamily: "'Cormorant Garamond', serif",
-                fontSize: 17,
-                fontWeight: 700,
-                color: C.text,
-                letterSpacing: 0.5,
-              }}
-            >
-              VERTEX<span style={{ color: C.gold }}>FX</span>
-            </span>
-            <span
-              style={{
-                fontFamily: FF.sans,
-                fontSize: 9,
-                color: C.textDim,
-                display: "block",
-                letterSpacing: 1.5,
-                textTransform: "uppercase",
-                marginTop: -2,
-              }}
-            >
-              Admin
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  background: `linear-gradient(135deg, ${C.gold}, ${C.goldMuted})`,
+                  borderRadius: 8,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <span
+                  style={{
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: 16,
+                    fontFamily: "serif",
+                  }}
+                >
+                  V
+                </span>
+              </div>
+              <div>
+                <span
+                  style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontSize: 17,
+                    fontWeight: 700,
+                    color: C.text,
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  VERTEX<span style={{ color: C.gold }}>FX</span>
+                </span>
+                <span
+                  style={{
+                    fontFamily: FF.sans,
+                    fontSize: 9,
+                    color: C.textDim,
+                    display: "block",
+                    letterSpacing: 1.5,
+                    textTransform: "uppercase",
+                    marginTop: -2,
+                  }}
+                >
+                  Admin
+                </span>
+              </div>
+            </div>
+            {isMobile && (
+              <button
+                onClick={onClose}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: C.text,
+                  fontSize: 24,
+                  cursor: "pointer",
+                  padding: 4,
+                }}
+              >
+                ✕
+              </button>
+            )}
           </div>
         </div>
-      </div>
-      <nav style={{ padding: "16px 12px", flex: 1, overflowY: "auto" }}>
-        {visibleTabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "10px 12px",
-              background: activeTab === tab.id ? C.goldSub : "transparent",
-              color: activeTab === tab.id ? C.gold : C.textMuted,
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-              textAlign: "left",
-              marginBottom: 4,
-              transition: "background 0.15s",
-            }}
-            onMouseEnter={(e) =>
-              !activeTab && (e.currentTarget.style.background = C.bg3)
-            }
-            onMouseLeave={(e) =>
-              !activeTab && (e.currentTarget.style.background = "transparent")
-            }
-          >
-            <span style={{ fontSize: 16 }}>{tab.icon}</span>
-            <span
-              style={{ fontFamily: FF.sans, fontSize: 13, fontWeight: 500 }}
+        <nav style={{ padding: "16px 12px", flex: 1, overflowY: "auto" }}>
+          {visibleTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id);
+                if (isMobile) onClose();
+              }}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 12px",
+                background: activeTab === tab.id ? C.goldSub : "transparent",
+                color: activeTab === tab.id ? C.gold : C.textMuted,
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                textAlign: "left",
+                marginBottom: 4,
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={(e) =>
+                !activeTab && (e.currentTarget.style.background = C.bg3)
+              }
+              onMouseLeave={(e) =>
+                !activeTab && (e.currentTarget.style.background = "transparent")
+              }
             >
-              {tab.label}
-            </span>
-          </button>
-        ))}
-      </nav>
-      <div style={{ padding: "16px 12px", borderTop: `1px solid ${C.border}` }}>
-        <Btn
-          variant="ghost"
-          onClick={onLogout}
-          style={{ width: "100%" }}
-          icon="🚪"
+              <span style={{ fontSize: 16 }}>{tab.icon}</span>
+              <span
+                style={{ fontFamily: FF.sans, fontSize: 13, fontWeight: 500 }}
+              >
+                {tab.label}
+              </span>
+            </button>
+          ))}
+        </nav>
+        <div
+          style={{ padding: "16px 12px", borderTop: `1px solid ${C.border}` }}
         >
-          Logout
-        </Btn>
+          <Btn
+            variant="ghost"
+            onClick={onLogout}
+            style={{ width: "100%" }}
+            icon="🚪"
+          >
+            Logout
+          </Btn>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 // Top Bar Component
-function TopBar({ admin, onLogout, onRefresh }) {
+function TopBar({ admin, onLogout, onRefresh, isMobile, onToggleSidebar }) {
   const [time, setTime] = useState(new Date());
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -919,32 +977,50 @@ function TopBar({ admin, onLogout, onRefresh }) {
         borderBottom: `1px solid ${C.border}`,
         display: "flex",
         alignItems: "center",
-        padding: "0 24px",
+        padding: isMobile ? "0 16px" : "0 24px",
         gap: 16,
       }}
     >
-      <div style={{ width: 260, flexShrink: 0 }} /> {/* Spacer for sidebar */}
+      {isMobile && (
+        <button
+          onClick={onToggleSidebar}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: C.text,
+            fontSize: 24,
+            cursor: "pointer",
+            padding: 8,
+          }}
+        >
+          ☰
+        </button>
+      )}
+      {!isMobile && <div style={{ width: 260, flexShrink: 0 }} />}{" "}
+      {/* Spacer for sidebar */}
       <div style={{ flex: 1 }} />
       <Btn
         variant="ghost"
         onClick={onRefresh}
         style={{
-          padding: "8px 16px",
+          padding: isMobile ? "6px 12px" : "8px 16px",
           fontSize: 14,
         }}
       >
         🔄 Refresh
       </Btn>
-      <div
-        style={{
-          fontFamily: FF.mono,
-          fontSize: 12,
-          color: C.textMuted,
-          whiteSpace: "nowrap",
-        }}
-      >
-        {utcTime} <span style={{ color: C.textDim }}>UTC</span>
-      </div>
+      {!isMobile && (
+        <div
+          style={{
+            fontFamily: FF.mono,
+            fontSize: 12,
+            color: C.textMuted,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {utcTime} <span style={{ color: C.textDim }}>UTC</span>
+        </div>
+      )}
       <div ref={dropdownRef} style={{ position: "relative" }}>
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -963,34 +1039,38 @@ function TopBar({ admin, onLogout, onRefresh }) {
           onMouseLeave={(e) => (e.currentTarget.style.borderColor = C.border)}
         >
           <Avatar name={`${admin.firstName} ${admin.lastName}`} size={32} />
-          <div>
-            <div
-              style={{
-                fontFamily: FF.sans,
-                fontSize: 13,
-                fontWeight: 500,
-                color: C.text,
-                lineHeight: 1,
-              }}
-            >
-              {admin.firstName} {admin.lastName}
+          {!isMobile && (
+            <div>
+              <div
+                style={{
+                  fontFamily: FF.sans,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: C.text,
+                  lineHeight: 1,
+                }}
+              >
+                {admin.firstName} {admin.lastName}
+              </div>
+              <div
+                style={{
+                  fontFamily: FF.sans,
+                  fontSize: 10,
+                  color: C.gold,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                  marginTop: 1,
+                }}
+              >
+                {admin.role?.replace("_", " ")}
+              </div>
             </div>
-            <div
-              style={{
-                fontFamily: FF.sans,
-                fontSize: 10,
-                color: C.gold,
-                textTransform: "uppercase",
-                letterSpacing: 0.5,
-                marginTop: 1,
-              }}
-            >
-              {admin.role?.replace("_", " ")}
-            </div>
-          </div>
-          <span style={{ color: C.textMuted, fontSize: 12 }}>
-            {isDropdownOpen ? "▲" : "▼"}
-          </span>
+          )}
+          {!isMobile && (
+            <span style={{ color: C.textMuted, fontSize: 12 }}>
+              {isDropdownOpen ? "▲" : "▼"}
+            </span>
+          )}
         </button>
         {/* Dropdown Menu */}
         {isDropdownOpen && (
@@ -1071,6 +1151,14 @@ function TopBar({ admin, onLogout, onRefresh }) {
 
 // Overview Tab
 function OverviewTab({ stats, users, deposits, withdrawals }) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 900);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const chartData = [
     { x: "Mon", y: 45000 },
     { x: "Tue", y: 52000 },
@@ -1086,7 +1174,9 @@ function OverviewTab({ stats, users, deposits, withdrawals }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gridTemplateColumns: isMobile
+            ? "1fr"
+            : "repeat(auto-fit, minmax(240px, 1fr))",
           gap: 20,
         }}
       >
@@ -1112,7 +1202,13 @@ function OverviewTab({ stats, users, deposits, withdrawals }) {
         />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr",
+          gap: 20,
+        }}
+      >
         <Card title="Trading Volume (7d)">
           <SimpleLineChart data={chartData} />
         </Card>
@@ -1131,7 +1227,13 @@ function OverviewTab({ stats, users, deposits, withdrawals }) {
         </Card>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+          gap: 20,
+        }}
+      >
         <Card title="Recent Deposits">
           <Table
             columns={[
@@ -1213,6 +1315,14 @@ function OverviewTab({ stats, users, deposits, withdrawals }) {
 function UsersTab({ users, onEditUser, onViewUser }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 900);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const filtered = useMemo(() => {
     let arr = users || [];
     if (filter !== "all") arr = arr.filter((u) => u.status === filter);
@@ -1230,13 +1340,21 @@ function UsersTab({ users, onEditUser, onViewUser }) {
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          justifyContent: isMobile ? "center" : "space-between",
+          alignItems: isMobile ? "stretch" : "center",
           flexWrap: "wrap",
           gap: 12,
+          flexDirection: isMobile ? "column" : "row",
         }}
       >
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            flexWrap: "wrap",
+            flexDirection: isMobile ? "column" : "row",
+          }}
+        >
           <input
             placeholder="Search users..."
             value={search}
@@ -1248,7 +1366,7 @@ function UsersTab({ users, onEditUser, onViewUser }) {
               padding: "9px 14px",
               color: C.text,
               outline: "none",
-              minWidth: 240,
+              minWidth: isMobile ? "100%" : 240,
             }}
           />
           <Select
@@ -1264,7 +1382,11 @@ function UsersTab({ users, onEditUser, onViewUser }) {
             ]}
           />
         </div>
-        <Btn variant="primary" onClick={() => onEditUser({})}>
+        <Btn
+          variant="primary"
+          onClick={() => onEditUser({})}
+          style={{ width: isMobile ? "100%" : "auto" }}
+        >
           + Create User
         </Btn>
       </div>
@@ -2639,6 +2761,18 @@ function EditInstrumentModal({ instrument, isOpen, onClose, onSave }) {
 export default function AdminDashboard() {
   const { admin, isLoading, login, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 900;
+      setIsMobile(mobile);
+      if (!mobile) setSidebarOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // State
   const [stats, setStats] = useState(null);
@@ -2953,15 +3087,30 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ background: C.bg, minHeight: "100vh" }}>
-      <TopBar admin={admin} onLogout={logout} onRefresh={loadData} />
+      <TopBar
+        admin={admin}
+        onLogout={logout}
+        onRefresh={loadData}
+        isMobile={isMobile}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+      />
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onLogout={logout}
         role={admin.role}
+        isMobile={isMobile}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
-      <div style={{ marginLeft: 260, paddingTop: 64, minHeight: "100vh" }}>
-        <div style={{ padding: 24 }}>
+      <div
+        style={{
+          marginLeft: isMobile ? 0 : 260,
+          paddingTop: 64,
+          minHeight: "100vh",
+        }}
+      >
+        <div style={{ padding: isMobile ? 16 : 24 }}>
           {dataLoading ? (
             <div style={{ color: C.textMuted, fontFamily: FF.sans }}>
               Loading...
