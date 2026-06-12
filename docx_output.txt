@@ -1,0 +1,301 @@
+VERTEX FX
+Full-Stack Broker Platform
+Complete Technical & Operational Reference
+
+OVERVIEW
+This document covers every layer of the full-stack broker platform — from how a user registers to how money moves through the system. Each section explains what is happening, why it works that way, and what you need to build it with Node.js, a database, and real third-party APIs.
+The six core systems are:
+Registration & Authentication
+KYC — Identity Verification
+Deposits & Withdrawals
+Live Trading Dashboard
+Transaction History & Ledger
+Admin Control Panel
+
+1.  REGISTRATION & AUTHENTICATION
+What It Is
+Registration is the entry point. Every user who wants to trade must create an account. Authentication is the system that keeps their account secure and confirms their identity on every subsequent visit.
+What the User Does
+Opens the registration page and fills in: full name, email, password, country, and account type (Standard / Pro / RAW ECN)
+Submits the form — the system creates their profile and sends a verification email
+Clicks the email link to activate their account
+Logs in using email and password on every return visit
+If they forget their password, they request a reset link via email
+
+What You Build — Backend
+User Schema (MongoDB / PostgreSQL)
+id            — unique identifier (UUID)
+fullName      — string
+email         — string, unique, indexed
+passwordHash  — bcrypt hashed password (NEVER store plain text)
+accountType   — enum: Standard | Pro | RAW_ECN
+country       — string
+balance       — number (derived from ledger — see Section 5)
+kycStatus     — enum: none | pending | approved | rejected
+emailVerified — boolean
+createdAt     — timestamp
+lastLoginAt   — timestamp
+
+API Endpoints
+
+How JWT Authentication Works
+When a user logs in successfully, your server generates two tokens:
+Access Token: Short-lived (15 minutes). Sent with every API request in the Authorization header. The server checks it to confirm the user is logged in.
+Refresh Token: Long-lived (7 days). Stored in an httpOnly cookie. When the access token expires, the frontend uses this to silently get a new one — so the user stays logged in without re-entering their password.
+This two-token approach means even if someone steals an access token, it expires in 15 minutes. The refresh token stays in a secure cookie that JavaScript cannot read.
+
+Password Security
+Never store passwords as plain text — always hash with bcrypt (cost factor 12)
+On login: hash the submitted password and compare with the stored hash
+On reset: generate a cryptographically random token, store its hash, email the raw token, expire it in 1 hour
+
+Tools & Libraries
+
+2.  KYC — IDENTITY VERIFICATION
+What It Is and Why It Is Required
+KYC (Know Your Customer) is a legal requirement for any financial platform that holds customer funds. You must confirm that users are who they say they are. Without KYC approval, a user cannot deposit or trade. This protects you legally and prevents fraud and money laundering.
+What the User Submits
+Government-issued photo ID — Nigerian National ID, International Passport, or Driver's License
+Proof of address — utility bill or bank statement dated within 3 months
+Selfie or liveness check — a photo of the user holding their ID
+
+KYC Status Flow
+Every user starts at "None." They progress through the following stages:
+
+What You Build — Backend
+KYC Document Schema
+id           — UUID
+userId       — reference to user
+idType       — enum: national_id | passport | drivers_license
+idFrontUrl   — secure file storage URL
+idBackUrl    — secure file storage URL
+selfieUrl    — secure file storage URL
+proofUrl     — proof of address file URL
+status       — enum: pending | approved | rejected
+rejectionReason — string (filled if rejected)
+submittedAt  — timestamp
+reviewedAt   — timestamp
+
+API Endpoints
+
+File Upload Flow
+Documents are sensitive. Never store them on your own server disk. Upload them directly to cloud storage:
+Frontend sends files to your backend as multipart/form-data
+Backend receives files using the Multer library
+Backend immediately uploads to Cloudinary or AWS S3 (both have free tiers)
+Cloud storage returns a secure URL
+You save only the URL in your database — never the file itself
+
+Automated Verification (Nigeria — Recommended)
+Instead of manually reviewing every ID, integrate Smile Identity — built specifically for African identity documents. It checks NIN and BVN directly against government databases.
+How it works: User submits their NIN or BVN number. Your backend calls the Smile Identity API with that number. Smile Identity returns verified: true/false within seconds. You update the user's kycStatus automatically.
+Cost: Free sandbox for development. Pay-per-verification in production (fractions of a cent per check).
+Alternative: Youverify — also Nigerian-focused, supports NIN, BVN, CAC, and document OCR
+
+
+3.  DEPOSITS & WITHDRAWALS
+How Money Flows In — Deposits
+A deposit is when a user adds real money to their trading account. The flow must be secure, confirmed, and automatic. Money should only be credited to a user's balance after payment is actually confirmed — not when they click a button.
+Deposit Flow — Step by Step
+User opens the Deposit modal and enters an amount
+User selects a payment method (Card, Bank Transfer, Crypto)
+Your frontend calls your backend: POST /api/deposits/initiate
+Your backend calls the Paystack API to create a payment session
+Paystack returns a unique payment URL
+You redirect the user to that Paystack payment page
+User completes payment on Paystack's secure page
+Paystack sends a webhook POST request to your server confirming payment
+Your server verifies the webhook signature (to confirm it's really from Paystack)
+Your server creates a deposit transaction record and credits the user's balance
+User is redirected back to your platform and sees their updated balance
+
+Deposit Schema
+id            — UUID
+userId        — reference to user
+amount        — number (in USD or NGN)
+currency      — string
+method        — card | bank_transfer | crypto
+paystackRef   — Paystack payment reference
+status        — initiated | completed | failed
+initiatedAt   — timestamp
+confirmedAt   — timestamp (set by webhook)
+
+API Endpoints — Deposits
+
+How Money Flows Out — Withdrawals
+A withdrawal is when a user removes money from their account. Unlike deposits, withdrawals are not instant — they go through a review queue. This gives you control to check for fraud, ensure sufficient funds, and confirm KYC before releasing money.
+Withdrawal Flow — Step by Step
+User opens the Withdrawal modal, enters amount and bank account details
+System checks: Is KYC approved? Is balance sufficient? Are there no locked funds in open trades?
+If checks pass: withdrawal request is created with status "pending" and balance is reserved (deducted from available balance but held)
+Admin sees the request in the Admin Panel
+Admin reviews and clicks Approve
+Your backend calls the Paystack Transfer API to send money to the user's bank account
+Paystack sends a webhook confirming the transfer was successful
+Withdrawal status updates to "completed"
+User sees the updated status in their dashboard
+
+Withdrawal Schema
+id                — UUID
+userId            — reference to user
+amount            — number
+bankName          — string
+accountNumber     — string
+accountName       — string
+paystackTransferId — Paystack transfer code
+status            — pending | approved | processing | completed | rejected
+adminNote         — string (optional rejection reason)
+requestedAt       — timestamp
+processedAt       — timestamp
+
+API Endpoints — Withdrawals
+
+Payment Tools for Nigeria
+
+4.  LIVE TRADING DASHBOARD
+What It Is
+The trading dashboard is the core product — it is where users open and manage trades. It must show live prices, display open positions with real-time profit/loss, and allow users to execute trades instantly.
+Live Price Feeds
+Prices must update every second or faster. You cannot fetch prices from an HTTP endpoint on every render — that would be too slow and expensive. Instead, you use WebSockets — a persistent connection that pushes new prices to your frontend the moment they change.
+
+Free Price Feed APIs
+Recommended setup: Use Binance WebSocket for crypto (completely free, highly reliable). Use TraderMade for forex and metals. For stocks, use Polygon.io free tier.
+
+How a Trade Works — Full Flow
+Opening a Trade
+User selects an asset (e.g. GOLD), direction (BUY or SELL), and lot size
+Optionally sets Stop Loss and Take Profit prices
+Clicks Execute
+Backend calculates margin required = lot size × contract size × price × (1 / leverage)
+Backend checks: Is balance ≥ margin required?
+If yes: creates a trade record, locks the margin from the user's balance
+Trade is now open — P&L begins calculating in real time
+
+Real-Time P&L Calculation
+While a trade is open, the frontend calculates profit/loss every time the price updates:
+Long (BUY):  P&L = (currentPrice − entryPrice) × lotSize × contractSize
+Short (SELL): P&L = (entryPrice − currentPrice) × lotSize × contractSize
+This runs in the frontend using WebSocket price updates — no backend call needed for live P&L display.
+
+Closing a Trade
+User clicks Close on an open position
+Backend records the exit price and calculates final P&L
+Margin is released back to the user's available balance
+P&L amount is added (profit) or subtracted (loss) from the balance
+A transaction record is created for the closed trade
+Trade record is marked as closed
+
+Automatic Close — Stop Loss & Take Profit
+Your backend must run a background job (every 1–2 seconds) that checks all open trades against the current price:
+Stop Loss hit → close the trade at a loss automatically
+Take Profit hit → close the trade at a profit automatically
+User receives a notification that their trade was closed
+Use a library like node-cron or Bull (queue library) to run this job reliably.
+
+Margin Call & Stop Out
+Margin Call: When a user's equity (balance + all open P&L) drops below 50% of their used margin, show a red warning banner. They need to deposit more or close positions.
+Stop Out: When equity drops below 20% of used margin, your system automatically closes ALL open positions — worst-performing first. This protects you (the broker) from the user going negative.
+
+Trade Schema
+id            — UUID
+userId        — reference to user
+symbol        — e.g. EUR/USD, GOLD, BTC/USD
+direction     — BUY | SELL
+lotSize       — number
+contractSize  — standard size (e.g. 100,000 for forex, 100 for gold)
+entryPrice    — price at open
+exitPrice     — price at close (null while open)
+stopLoss      — price (optional)
+takeProfit    — price (optional)
+marginLocked  — amount held from balance
+commission    — fee charged at open
+swap          — overnight fee (accumulated daily)
+pnl           — final profit/loss (set on close)
+status        — open | closed
+openedAt      — timestamp
+closedAt      — timestamp
+
+Trading API Endpoints
+
+5.  TRANSACTION HISTORY & LEDGER
+What It Is and Why It Matters
+The ledger is the financial backbone of your platform. Every single event that changes a user's balance must be recorded as an immutable transaction entry. You never simply update a number in a column — you always append a new record.
+This is how real financial systems work. The user's true balance at any moment is the sum of all their transaction entries. This approach means:
+You have a complete, auditable record of every cent that moved
+You can reconstruct any account's balance at any point in history
+Disputes are easy to resolve — every event has a timestamp and a reference
+Accounting and tax reporting become straightforward
+
+Transaction Types
+
+Transaction Schema
+id            — UUID
+userId        — reference to user
+type          — one of the types above
+amount        — positive or negative number
+balanceAfter  — user's balance after this transaction (snapshot)
+reference     — related deposit ID, trade ID, or withdrawal ID
+description   — human-readable note
+createdAt     — timestamp
+
+Transaction API Endpoints
+
+Balance Calculation
+The user's available balance is calculated as:
+availableBalance = sum of all transaction amounts
+usedMargin      = sum of marginLocked on all open trades
+equity          = availableBalance + sum of all open trade P&L
+freeMargin      = equity − usedMargin
+marginLevel     = (equity / usedMargin) × 100  [shown as percentage]
+These five numbers are displayed prominently in the trading dashboard header and updated every time a price changes.
+
+6.  ADMIN CONTROL PANEL
+What It Is
+The Admin Panel is your command centre. It is a protected area of the application accessible only to you (and any staff you assign). From here you review KYC submissions, approve or reject withdrawals, monitor all user activity, and manage the platform.
+Admin Authentication
+Admin accounts are completely separate from regular user accounts. An admin user has a role field set to "admin" in the database. Every admin API route checks this role before responding.
+Admin logs in with the same login endpoint but receives a token that includes role: admin
+A middleware function on every admin route checks req.user.role === "admin" and blocks the request if not
+The admin panel frontend is a separate protected route — redirect to login if the token does not contain the admin role
+
+Admin Panel Sections
+1 — User Management
+Table of all users with: name, email, account type, KYC status, balance, registration date
+Click a user to view their full profile, transaction history, and open trades
+Manually adjust a user's balance (creates an adjustment transaction record)
+Suspend or reactivate a user account
+
+2 — KYC Review Queue
+List of all users with KYC status = pending
+Click to view uploaded documents (ID front, back, selfie, proof of address)
+Approve button — updates user kycStatus to approved, user is notified by email
+Reject button — prompts for rejection reason, user is notified with the reason and allowed to resubmit
+
+3 — Withdrawal Queue
+List of all withdrawal requests with status = pending
+Shows: user name, amount, destination bank, account number, date requested
+Approve — triggers Paystack Transfer API call to send money to user's bank
+Reject — releases reserved funds back to user's available balance, sends rejection email
+
+4 — Trade Monitor
+Live table of all open trades across all users
+Shows: user, symbol, direction, lot size, entry price, current price, P&L, margin used
+Admin can force-close any open position (used for emergency risk management)
+
+5 — Platform Statistics
+Total users registered
+Total deposits this month
+Total withdrawals this month
+Total open trades and combined exposure
+Total P&L owed to users across all open positions
+Platform revenue (total spread + commission earned)
+
+Admin API Endpoints
+
+FULL TECH STACK — FREE TOOLS ONLY
+
+RECOMMENDED BUILD ORDER
+Build in this sequence — each step depends on the one before it.
+
+
+End of Document

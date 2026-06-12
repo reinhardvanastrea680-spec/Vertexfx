@@ -1,0 +1,687 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  trader
+  admin
+  super_admin
+  support
+  compliance
+  finance
+  risk_manager
+}
+
+enum UserStatus {
+  pending
+  active
+  suspended
+  banned
+  closed
+}
+
+enum KycStatus {
+  not_submitted
+  pending
+  approved
+  rejected
+}
+
+enum DocumentType {
+  national_id
+  passport
+  drivers_license
+  utility_bill
+  bank_statement
+  selfie
+}
+
+enum DocumentStatus {
+  pending
+  approved
+  rejected
+}
+
+enum AccountType {
+  live
+  demo
+}
+
+enum AccountTier {
+  standard
+  pro
+  raw_ecn
+}
+
+enum AccountStatus {
+  active
+  suspended
+  closed
+}
+
+enum TradingPlatform {
+  mt4
+  mt5
+  webtrader
+  internal
+}
+
+enum InstrumentCategory {
+  forex
+  crypto
+  stocks
+  commodities
+  indices
+  etfs
+}
+
+enum OrderType {
+  market
+  limit
+  stop
+  stop_limit
+}
+
+enum OrderDirection {
+  buy
+  sell
+}
+
+enum OrderStatus {
+  pending
+  open
+  closed
+  cancelled
+  rejected
+}
+
+enum OrderPlatform {
+  mt4
+  mt5
+  webtrader
+  api
+}
+
+enum TransactionType {
+  deposit
+  withdrawal
+  internal_transfer
+  bonus
+  commission
+  adjustment
+  refund
+}
+
+enum TransactionDirection {
+  credit
+  debit
+}
+
+enum TransactionStatus {
+  pending
+  processing
+  completed
+  failed
+  reversed
+  cancelled
+}
+
+enum PaymentMethod {
+  card
+  bank_transfer
+  crypto
+  flutterwave
+  paystack
+  usdt
+  internal
+}
+
+enum NotificationType {
+  trade_opened
+  trade_closed
+  deposit_received
+  withdrawal_approved
+  withdrawal_rejected
+  kyc_approved
+  kyc_rejected
+  kyc_resubmission
+  margin_call
+  stop_out
+  system_alert
+  login_alert
+  bonus_credited
+  referral_earned
+  account_suspended
+  password_reset
+}
+
+enum NotificationChannel {
+  in_app
+  email
+  sms
+  push
+}
+
+enum BonusType {
+  welcome
+  deposit_match
+  referral
+  loyalty
+  promotional
+}
+
+enum BonusStatus {
+  pending
+  active
+  withdrawn
+  forfeited
+  expired
+}
+
+enum ReferralStatus {
+  pending
+  qualified
+  rewarded
+}
+
+enum DeviceType {
+  web
+  ios
+  android
+  api
+}
+
+enum AuditSeverity {
+  info
+  warning
+  critical
+}
+
+enum AmlStatus {
+  open
+  escalated
+  cleared
+  sar_filed
+}
+
+enum OhlcvTimeframe {
+  M1
+  M5
+  M15
+  M30
+  H1
+  H4
+  D1
+  W1
+  MN
+}
+
+enum SettingValueType {
+  string
+  number
+  boolean
+  json
+}
+
+// ─── MODELS ───────────────────────────────────────────────────────────────────
+
+model User {
+  id               String     @id @default(uuid())
+  email            String     @unique
+  phone            String?    @unique
+  passwordHash     String     @map("password_hash")
+  firstName        String     @map("first_name")
+  lastName         String     @map("last_name")
+  dateOfBirth      DateTime?  @map("date_of_birth") @db.Date
+  country          String?
+  nationality      String?
+  addressLine1     String?    @map("address_line1")
+  addressLine2     String?    @map("address_line2")
+  city             String?
+  state            String?
+  postalCode       String?    @map("postal_code")
+  referralCode     String?    @unique @map("referral_code")
+  referredById     String?    @map("referred_by")
+  role             UserRole   @default(trader)
+  status           UserStatus @default(pending)
+  emailVerified    Boolean    @default(false) @map("email_verified")
+  phoneVerified    Boolean    @default(false) @map("phone_verified")
+  kycStatus        KycStatus  @default(not_submitted) @map("kyc_status")
+  twoFaEnabled     Boolean    @default(false) @map("two_fa_enabled")
+  twoFaSecret      String?    @map("two_fa_secret")
+  lastLoginAt      DateTime?  @map("last_login_at")
+  lastLoginIp      String?    @map("last_login_ip")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+  deletedAt        DateTime?  @map("deleted_at")
+
+  referredBy       User?              @relation("Referrals", fields: [referredById], references: [id])
+  referrals        User[]             @relation("Referrals")
+  kycDocuments     KycDocument[]
+  tradingAccounts  TradingAccount[]
+  wallet           WalletAccount?
+  transactions     Transaction[]
+  notifications    Notification[]
+  sessions         Session[]
+  bonuses          Bonus[]
+  auditLogsAsActor AuditLog[]         @relation("AuditActor")
+  auditLogsAsTarget AuditLog[]        @relation("AuditTarget")
+  referrerReferrals Referral[]        @relation("ReferrerReferrals")
+  referredReferral  Referral?         @relation("ReferredReferral")
+  staffNotes       StaffNote[]        @relation("NoteAuthor")
+  staffNotesTarget StaffNote[]        @relation("NoteTarget")
+  orders           Order[]
+  positions        Position[]
+
+  @@map("users")
+}
+
+model KycDocument {
+  id              String         @id @default(uuid())
+  userId          String         @map("user_id")
+  documentType    DocumentType   @map("document_type")
+  documentNumber  String?        @map("document_number")
+  countryOfIssue  String?        @map("country_of_issue")
+  expiryDate      DateTime?      @map("expiry_date") @db.Date
+  frontImageUrl   String?        @map("front_image_url")
+  backImageUrl    String?        @map("back_image_url")
+  selfieImageUrl  String?        @map("selfie_image_url")
+  status          DocumentStatus @default(pending)
+  rejectionReason String?        @map("rejection_reason")
+  reviewedById    String?        @map("reviewed_by")
+  reviewedAt      DateTime?      @map("reviewed_at")
+  provider        String         @default("manual")
+  providerCheckId String?        @map("provider_check_id")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  user       User  @relation(fields: [userId], references: [id])
+
+  @@map("kyc_documents")
+}
+
+model TradingAccount {
+  id                String          @id @default(uuid())
+  userId            String          @map("user_id")
+  accountNumber     String          @unique @map("account_number")
+  accountType       AccountType     @map("account_type")
+  accountTier       AccountTier     @default(standard) @map("account_tier")
+  currency          String          @default("USD")
+  leverage          Int             @default(200)
+  balance           Decimal         @default(0) @db.Decimal(20, 8)
+  equity            Decimal         @default(0) @db.Decimal(20, 8)
+  margin            Decimal         @default(0) @db.Decimal(20, 8)
+  freeMargin        Decimal         @default(0) @db.Decimal(20, 8) @map("free_margin")
+  marginLevel       Decimal         @default(0) @db.Decimal(10, 2) @map("margin_level")
+  status            AccountStatus   @default(active)
+  platform          TradingPlatform @default(webtrader)
+  platformAccountId String?         @map("platform_account_id")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  user      User       @relation(fields: [userId], references: [id])
+  orders    Order[]
+  positions Position[]
+  bonuses   Bonus[]
+
+  @@map("trading_accounts")
+}
+
+model Instrument {
+  id              String             @id @default(uuid())
+  symbol          String             @unique
+  displayName     String             @map("display_name")
+  category        InstrumentCategory
+  baseCurrency    String             @map("base_currency")
+  quoteCurrency   String             @map("quote_currency")
+  contractSize    Decimal            @default(100000) @db.Decimal(20, 8) @map("contract_size")
+  pipSize         Decimal            @db.Decimal(20, 10) @map("pip_size")
+  minLot          Decimal            @default(0.01) @db.Decimal(10, 5) @map("min_lot")
+  maxLot          Decimal            @default(100) @db.Decimal(10, 2) @map("max_lot")
+  lotStep         Decimal            @default(0.01) @db.Decimal(10, 5) @map("lot_step")
+  spread          Decimal            @default(0) @db.Decimal(10, 5)
+  commissionPerLot Decimal           @default(0) @db.Decimal(10, 5) @map("commission_per_lot")
+  swapLong        Decimal            @default(0) @db.Decimal(10, 6) @map("swap_long")
+  swapShort       Decimal            @default(0) @db.Decimal(10, 6) @map("swap_short")
+  marginPercent   Decimal            @default(0.5) @db.Decimal(10, 4) @map("margin_percent")
+  isActive        Boolean            @default(true) @map("is_active")
+  tradingHours    Json               @default("{}") @map("trading_hours")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  orders    Order[]
+  priceTicks PriceTick[]
+  ohlcvCandles OhlcvCandle[]
+
+  @@map("instruments")
+}
+
+model Order {
+  id             String         @id @default(uuid())
+  accountId      String         @map("account_id")
+  userId         String         @map("user_id")
+  instrumentId   String         @map("instrument_id")
+  symbol         String
+  orderType      OrderType      @map("order_type")
+  direction      OrderDirection
+  volume         Decimal        @db.Decimal(10, 5)
+  openPrice      Decimal?       @db.Decimal(20, 8) @map("open_price")
+  requestedPrice Decimal        @db.Decimal(20, 8) @map("requested_price")
+  stopLoss       Decimal?       @db.Decimal(20, 8) @map("stop_loss")
+  takeProfit     Decimal?       @db.Decimal(20, 8) @map("take_profit")
+  status         OrderStatus    @default(pending)
+  openTime       DateTime?      @map("open_time")
+  closeTime      DateTime?      @map("close_time")
+  closePrice     Decimal?       @db.Decimal(20, 8) @map("close_price")
+  profitLoss     Decimal        @default(0) @db.Decimal(20, 8) @map("profit_loss")
+  commission     Decimal        @default(0) @db.Decimal(20, 8)
+  swap           Decimal        @default(0) @db.Decimal(20, 8)
+  comment        String?
+  magicNumber    Int?           @map("magic_number")
+  ticketNumber   String         @unique @map("ticket_number")
+  ipAddress      String?        @map("ip_address")
+  platform       OrderPlatform  @default(webtrader)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  account    TradingAccount @relation(fields: [accountId], references: [id])
+  user       User           @relation(fields: [userId], references: [id])
+  instrument Instrument     @relation(fields: [instrumentId], references: [id])
+  position   Position?
+
+  @@index([userId])
+  @@index([accountId])
+  @@index([symbol])
+  @@index([status])
+  @@map("orders")
+}
+
+model Position {
+  id               String         @id @default(uuid())
+  orderId          String         @unique @map("order_id")
+  accountId        String         @map("account_id")
+  userId           String         @map("user_id")
+  symbol           String
+  direction        OrderDirection
+  volume           Decimal        @db.Decimal(10, 5)
+  openPrice        Decimal        @db.Decimal(20, 8) @map("open_price")
+  currentPrice     Decimal        @db.Decimal(20, 8) @map("current_price")
+  stopLoss         Decimal?       @db.Decimal(20, 8) @map("stop_loss")
+  takeProfit       Decimal?       @db.Decimal(20, 8) @map("take_profit")
+  floatingPnl      Decimal        @default(0) @db.Decimal(20, 8) @map("floating_pnl")
+  swapAccumulated  Decimal        @default(0) @db.Decimal(20, 8) @map("swap_accumulated")
+  marginUsed       Decimal        @db.Decimal(20, 8) @map("margin_used")
+  openTime         DateTime       @map("open_time")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  order   Order          @relation(fields: [orderId], references: [id])
+  account TradingAccount @relation(fields: [accountId], references: [id])
+  user    User           @relation(fields: [userId], references: [id])
+
+  @@index([accountId])
+  @@index([symbol])
+  @@map("positions")
+}
+
+model WalletAccount {
+  id             String   @id @default(uuid())
+  userId         String   @unique @map("user_id")
+  currency       String   @default("USD")
+  balance        Decimal  @default(0) @db.Decimal(20, 8)
+  lockedBalance  Decimal  @default(0) @db.Decimal(20, 8) @map("locked_balance")
+  totalDeposited Decimal  @default(0) @db.Decimal(20, 8) @map("total_deposited")
+  totalWithdrawn Decimal  @default(0) @db.Decimal(20, 8) @map("total_withdrawn")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+  bankAccounts BankAccount[]
+
+  @@map("wallet_accounts")
+}
+
+model Transaction {
+  id               String               @id @default(uuid())
+  userId           String               @map("user_id")
+  walletId         String               @map("wallet_id")
+  type             TransactionType
+  direction        TransactionDirection
+  amount           Decimal              @db.Decimal(20, 8)
+  currency         String               @default("USD")
+  status           TransactionStatus    @default(pending)
+  paymentMethod    PaymentMethod        @map("payment_method")
+  paymentReference String?              @map("payment_reference")
+  gatewayResponse  Json?                @map("gateway_response")
+  exchangeRate     Decimal?             @db.Decimal(20, 8) @map("exchange_rate")
+  fee              Decimal              @default(0) @db.Decimal(20, 8)
+  netAmount        Decimal              @db.Decimal(20, 8) @map("net_amount")
+  balanceBefore    Decimal              @db.Decimal(20, 8) @map("balance_before")
+  balanceAfter     Decimal              @db.Decimal(20, 8) @map("balance_after")
+  description      String?
+  processedById    String?              @map("processed_by")
+  processedAt      DateTime?            @map("processed_at")
+  ipAddress        String?              @map("ip_address")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+
+  user   User          @relation(fields: [userId], references: [id])
+  wallet WalletAccount @relation(fields: [walletId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@map("transactions")
+}
+
+model BankAccount {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  walletId      String   @map("wallet_id")
+  accountName   String   @map("account_name")
+  bankName      String   @map("bank_name")
+  accountNumber String   @map("account_number")
+  routingNumber String?  @map("routing_number")
+  sortCode      String?  @map("sort_code")
+  iban          String?
+  swiftBic      String?  @map("swift_bic")
+  country       String
+  currency      String   @default("USD")
+  isVerified    Boolean  @default(false) @map("is_verified")
+  isPrimary     Boolean  @default(false) @map("is_primary")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  wallet WalletAccount @relation(fields: [walletId], references: [id])
+
+  @@map("bank_accounts")
+}
+
+model PriceTick {
+  id           BigInt   @id @default(autoincrement())
+  symbol       String
+  instrumentId String   @map("instrument_id")
+  bid          Decimal  @db.Decimal(20, 8)
+  ask          Decimal  @db.Decimal(20, 8)
+  mid          Decimal  @db.Decimal(20, 8)
+  volume       Decimal? @db.Decimal(20, 8)
+  timestamp    DateTime @default(now())
+  source       String   @default("internal")
+
+  instrument Instrument @relation(fields: [instrumentId], references: [id])
+
+  @@index([symbol, timestamp(sort: Desc)])
+  @@map("price_ticks")
+}
+
+model OhlcvCandle {
+  id           BigInt         @id @default(autoincrement())
+  symbol       String
+  instrumentId String         @map("instrument_id")
+  timeframe    OhlcvTimeframe
+  open         Decimal        @db.Decimal(20, 8)
+  high         Decimal        @db.Decimal(20, 8)
+  low          Decimal        @db.Decimal(20, 8)
+  close        Decimal        @db.Decimal(20, 8)
+  volume       Decimal        @db.Decimal(20, 8)
+  candleTime   DateTime       @map("candle_time")
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  instrument Instrument @relation(fields: [instrumentId], references: [id])
+
+  @@unique([symbol, timeframe, candleTime])
+  @@index([symbol, timeframe, candleTime(sort: Desc)])
+  @@map("ohlcv_candles")
+}
+
+model AuditLog {
+  id           String        @id @default(uuid())
+  actorId      String        @map("actor_id")
+  targetUserId String?       @map("target_user_id")
+  action       String
+  entityType   String?       @map("entity_type")
+  entityId     String?       @map("entity_id")
+  oldValue     Json?         @map("old_value")
+  newValue     Json?         @map("new_value")
+  ipAddress    String?       @map("ip_address")
+  userAgent    String?       @map("user_agent")
+  module       String?
+  severity     AuditSeverity @default(info)
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  actor      User  @relation("AuditActor", fields: [actorId], references: [id])
+  targetUser User? @relation("AuditTarget", fields: [targetUserId], references: [id])
+
+  @@index([actorId])
+  @@index([targetUserId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String              @map("user_id")
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean             @default(false) @map("is_read")
+  readAt    DateTime?           @map("read_at")
+  channel   NotificationChannel @default(in_app)
+  metadata  Json?
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model Bonus {
+  id                   String      @id @default(uuid())
+  userId               String      @map("user_id")
+  accountId            String      @map("account_id")
+  bonusType            BonusType   @map("bonus_type")
+  amount               Decimal     @db.Decimal(20, 8)
+  currency             String      @default("USD")
+  status               BonusStatus @default(pending)
+  wageringRequirement  Decimal     @default(0) @db.Decimal(20, 8) @map("wagering_requirement")
+  wageringCompleted    Decimal     @default(0) @db.Decimal(20, 8) @map("wagering_completed")
+  expiryDate           DateTime?   @map("expiry_date") @db.Date
+  awardedById          String?     @map("awarded_by")
+  createdAt            DateTime    @default(now()) @map("created_at")
+  updatedAt            DateTime    @updatedAt @map("updated_at")
+
+  user    User           @relation(fields: [userId], references: [id])
+  account TradingAccount @relation(fields: [accountId], references: [id])
+
+  @@map("bonuses")
+}
+
+model Referral {
+  id               String         @id @default(uuid())
+  referrerId       String         @map("referrer_id")
+  referredId       String         @unique @map("referred_id")
+  status           ReferralStatus @default(pending)
+  commissionEarned Decimal        @default(0) @db.Decimal(20, 8) @map("commission_earned")
+  firstDepositDate DateTime?      @map("first_deposit_date") @db.Date
+  qualifiedAt      DateTime?      @map("qualified_at")
+  createdAt        DateTime       @default(now()) @map("created_at")
+
+  referrer User @relation("ReferrerReferrals", fields: [referrerId], references: [id])
+  referred User @relation("ReferredReferral", fields: [referredId], references: [id])
+
+  @@map("referrals")
+}
+
+model Session {
+  id               String     @id @default(uuid())
+  userId           String     @map("user_id")
+  refreshTokenHash String     @map("refresh_token_hash")
+  ipAddress        String?    @map("ip_address")
+  userAgent        String?    @map("user_agent")
+  deviceType       DeviceType @default(web) @map("device_type")
+  isRevoked        Boolean    @default(false) @map("is_revoked")
+  expiresAt        DateTime   @map("expires_at")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  lastUsedAt       DateTime   @default(now()) @map("last_used_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model SystemSetting {
+  id          String           @id @default(uuid())
+  key         String           @unique
+  value       String
+  valueType   SettingValueType @default(string) @map("value_type")
+  description String?
+  updatedById String?          @map("updated_by")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+model AmlAlert {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  transactionId String?   @map("transaction_id")
+  alertType     String    @map("alert_type")
+  amount        Decimal   @db.Decimal(20, 8)
+  riskScore     Int       @default(0) @map("risk_score")
+  details       Json?
+  status        AmlStatus @default(open)
+  assignedToId  String?   @map("assigned_to")
+  resolvedById  String?   @map("resolved_by")
+  resolvedAt    DateTime? @map("resolved_at")
+  resolution    String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("aml_alerts")
+}
+
+model StaffNote {
+  id        String   @id @default(uuid())
+  authorId  String   @map("author_id")
+  targetId  String   @map("target_id")
+  content   String
+  isFlag    Boolean  @default(false) @map("is_flag")
+  flagType  String?  @map("flag_type")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  author User @relation("NoteAuthor", fields: [authorId], references: [id])
+  target User @relation("NoteTarget", fields: [targetId], references: [id])
+
+  @@map("staff_notes")
+}

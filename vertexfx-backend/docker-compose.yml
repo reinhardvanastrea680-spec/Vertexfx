@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: vertexfx_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vertexfx_dev
+      POSTGRES_USER: vertexfx
+      POSTGRES_PASSWORD: devpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vertexfx -d vertexfx_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: vertexfx_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: vertexfx_api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://vertexfx:devpassword@postgres:5432/vertexfx_dev
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: dev_access_secret
+      JWT_REFRESH_SECRET: dev_refresh_secret
+      ENCRYPTION_KEY: dev_32char_encryption_key_change!
+      FRONTEND_URL: http://localhost:5173
+      ADMIN_URL: http://localhost:5174
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+
+volumes:
+  pg_data:
