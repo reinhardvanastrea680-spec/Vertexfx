@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:4000/api";
+﻿const API_BASE_URL = "https://vertexfx-backend.onrender.com/api";
 let isRefreshing = false;
 let refreshSubscribers = [];
 
@@ -61,7 +61,7 @@ export async function apiRequest(path, options = {}) {
   return data.data ?? data;
 }
 
-// ── Users ──────────────────────────────────────────────────────────────────
+// â”€â”€ Users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const usersApi = {
   getMe: () => apiRequest("/users/me"),
   updateProfile: (data) => apiRequest("/users/me", { method: "PATCH", body: JSON.stringify(data) }),
@@ -73,7 +73,7 @@ export const usersApi = {
   markAllNotificationsRead: () => apiRequest("/users/me/notifications/read-all", { method: "POST" }),
 };
 
-// ── Wallet ─────────────────────────────────────────────────────────────────
+// â”€â”€ Wallet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const walletApi = {
   getWallet: () => apiRequest("/wallet"),
   initiateDeposit: (data) => apiRequest("/wallet/deposit", { method: "POST", body: JSON.stringify(data) }),
@@ -84,7 +84,7 @@ export const walletApi = {
   deleteBankAccount: (id) => apiRequest(`/wallet/bank-accounts/${id}`, { method: "DELETE" }),
 };
 
-// ── Trading ────────────────────────────────────────────────────────────────
+// â”€â”€ Trading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const tradingApi = {
   placeOrder: (data) => apiRequest("/trading/orders", { method: "POST", body: JSON.stringify(data) }),
   getOrders: (accountId, page = 1) => apiRequest(`/trading/orders?accountId=${accountId}&page=${page}`),
@@ -94,10 +94,11 @@ export const tradingApi = {
   modifyPosition: (id, stopLoss, takeProfit) => apiRequest(`/trading/positions/${id}/modify`, { method: "POST", body: JSON.stringify({ stopLoss, takeProfit }) }),
 };
 
-// ── Market ─────────────────────────────────────────────────────────────────
+// â”€â”€ Market â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const marketApi = {
   getInstruments: (category) => apiRequest(`/market/instruments${category ? `?category=${category}` : ""}`),
   getInstrument: (symbol) => apiRequest(`/market/instruments/${symbol}`),
   getPrice: (symbol) => apiRequest(`/market/instruments/${symbol}/price`),
   getCandles: (symbol, timeframe, from, to) => apiRequest(`/market/instruments/${symbol}/candles?timeframe=${timeframe}&from=${from}&to=${to}`),
 };
+

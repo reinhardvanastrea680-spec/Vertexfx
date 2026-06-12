@@ -2,7 +2,7 @@
 
 ## URLs
 
-- Backend API: http://localhost:4000
+- Backend API: - Backend API: https://vertexfx-backend.onrender.com
 - User Frontend: https://vertexfx.vercel.app
 - Admin Dashboard: https://vertexfx-azxs.vercel.app
 

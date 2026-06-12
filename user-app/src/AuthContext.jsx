@@ -1,8 +1,8 @@
-import { createContext, useContext, useState, useEffect } from "react";
+﻿import { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext();
 
-const API_BASE_URL = "http://localhost:4000/api";
+const API_BASE_URL = "https://vertexfx-backend.onrender.com/api";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -120,3 +120,4 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
+

@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
+﻿import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "http://localhost:4000";
+const SOCKET_URL = "https://vertexfx-backend.onrender.com";
 const SocketContext = createContext();
 
 export function SocketProvider({ children }) {
@@ -65,3 +65,4 @@ export function SocketProvider({ children }) {
 export function useSocket() {
   return useContext(SocketContext);
 }
+

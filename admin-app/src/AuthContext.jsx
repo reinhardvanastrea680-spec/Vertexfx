@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+﻿import { createContext, useContext, useState, useEffect } from "react";
 import { authApi, adminApi } from "./api";
 
 const AuthContext = createContext();
@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
 
   const fetchProfile = async (token) => {
     try {
-      const res = await fetch("http://localhost:4000/api/users/me", {
+      const res = await fetch("https://vertexfx-backend.onrender.com/api/users/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const res = await fetch("http://localhost:4000/api/auth/login", {
+      const res = await fetch("https://vertexfx-backend.onrender.com/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -90,3 +90,4 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
+

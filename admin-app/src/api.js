@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:4000/api";
+﻿const API_BASE_URL = "https://vertexfx-backend.onrender.com/api";
 let isRefreshing = false;
 let refreshSubscribers = [];
 
@@ -70,7 +70,7 @@ export async function apiRequest(path, options = {}) {
   return data.data ?? data;
 }
 
-// ─── Auth ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const authApi = {
   register: (data) =>
     apiRequest("/auth/register", {
@@ -82,7 +82,7 @@ export const authApi = {
   logout: () => apiRequest("/auth/logout", { method: "POST" }),
 };
 
-// ─── Admin ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const adminApi = {
   getDashboardStats: () => apiRequest("/admin/dashboard/stats"),
   getUsers: (params = {}) => {
@@ -157,3 +157,4 @@ export const adminApi = {
     });
   },
 };
+

@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
@@ -24,8 +24,10 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
 
-  @media (max-width: 1024px) {
+@media (max-width: 1024px) {
+  :root {
     font-size: 16px;
   }
 }
@@ -50,8 +52,13 @@
   }
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
+  overflow-x: hidden;
 }
 
 /* Glow animations */
@@ -105,6 +112,12 @@ body {
   box-sizing: border-box;
 }
 
+/* Make all images responsive */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
 h1,
 h2 {
   font-family: var(--heading);
@@ -116,7 +129,10 @@ h1 {
   font-size: 56px;
   letter-spacing: -1.68px;
   margin: 32px 0;
-  @media (max-width: 1024px) {
+}
+
+@media (max-width: 1024px) {
+  h1 {
     font-size: 36px;
     margin: 20px 0;
   }
@@ -126,7 +142,9 @@ h2 {
   line-height: 118%;
   letter-spacing: -0.24px;
   margin: 0 0 8px;
-  @media (max-width: 1024px) {
+}
+@media (max-width: 1024px) {
+  h2 {
     font-size: 20px;
   }
 }
@@ -147,4 +165,25 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+}
+
+/* General mobile responsive utilities */
+@media (max-width: 768px) {
+  :root {
+    font-size: 15px;
+  }
+  .mobile-only {
+    display: block;
+  }
+  .desktop-only {
+    display: none;
+  }
+}
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none;
+  }
+  .desktop-only {
+    display: block;
+  }
 }
