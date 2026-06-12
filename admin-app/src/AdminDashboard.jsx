@@ -2796,99 +2796,34 @@ export default function AdminDashboard() {
   // Load Data
   const loadData = useCallback(async () => {
     try {
-      const [
-        statsData,
-        usersData,
-        instrumentsData,
-        kycData,
-        transactionsData,
-        tradingAccountsData,
-        openPositionsData,
-        settingsData,
-      ] = await Promise.allSettled([
-        adminApi.getDashboardStats(),
-        adminApi.getUsers(),
-        adminApi.getInstruments(),
-        adminApi.getKycQueue(),
-        adminApi.getTransactions(),
-        adminApi.getTradingAccounts(),
-        adminApi.getOpenPositions(),
-        adminApi.getSettings(),
-      ]);
+      const statsData = await adminApi.getDashboardStats();
+      const usersData = await adminApi.getUsers();
+      const instrumentsData = await adminApi.getInstruments();
+      const kycData = await adminApi.getKycQueue();
+      const transactionsData = await adminApi.getTransactions();
+      const tradingAccountsData = await adminApi.getTradingAccounts();
+      const openPositionsData = await adminApi.getOpenPositions();
+      const settingsData = await adminApi.getSettings();
 
-      // Process each result with defaults if fulfilled
-      if (statsData.status === "fulfilled") setStats(statsData.value);
-      if (usersData.status === "fulfilled")
-        setUsers(usersData.value.users || []);
-      if (instrumentsData.status === "fulfilled")
-        setInstruments(instrumentsData.value.instruments || []);
+      setStats(statsData);
+      setUsers(usersData.users || []);
+      setInstruments(instrumentsData.instruments || []);
+      setKycRecords(kycData.docs || []);
 
-      // Map KYC data
-      if (kycData.status === "fulfilled") {
-        const mappedKyc = (kycData.value.docs || []).map((doc) => ({
-          ...doc,
-          userName: `${doc.user.firstName} ${doc.user.lastName}`,
-          email: doc.user.email,
-        }));
-        setKycRecords(mappedKyc);
-      }
+      const allTransactions = transactionsData.transactions || [];
+      setDeposits(allTransactions.filter((t) => t.type === "deposit"));
+      setWithdrawals(allTransactions.filter((t) => t.type === "withdrawal"));
 
-      // Map transactions to deposits/withdrawals
-      if (transactionsData.status === "fulfilled") {
-        const allTransactions = transactionsData.value.transactions || [];
-        setDeposits(
-          allTransactions
-            .filter((t) => t.type === "deposit")
-            .map((t) => ({
-              ...t,
-              userName: `${t.user.firstName} ${t.user.lastName}`,
-              email: t.user.email,
-            })),
-        );
-        setWithdrawals(
-          allTransactions
-            .filter((t) => t.type === "withdrawal")
-            .map((t) => ({
-              ...t,
-              userName: `${t.user.firstName} ${t.user.lastName}`,
-              email: t.user.email,
-            })),
-        );
-      }
+      setAccounts(tradingAccountsData.accounts || []);
+      setPositions(openPositionsData.positions || []);
 
-      // Map trading accounts
-      if (tradingAccountsData.status === "fulfilled") {
-        const mappedAccounts = (tradingAccountsData.value.accounts || []).map(
-          (acc) => ({
-            ...acc,
-            userName: `${acc.user.firstName} ${acc.user.lastName}`,
-          }),
-        );
-        setAccounts(mappedAccounts);
-      }
-
-      // Map open positions
-      if (openPositionsData.status === "fulfilled") {
-        const mappedPositions = (openPositionsData.value.positions || []).map(
-          (pos) => ({
-            ...pos,
-            userName: `${pos.user.firstName} ${pos.user.lastName}`,
-            account: pos.account.accountNumber,
-          }),
-        );
-        setPositions(mappedPositions);
-      }
-
-      // Settings
-      if (settingsData.status === "fulfilled") {
-        const settingsArr = Object.entries(settingsData.value || {}).map(
-          ([key, value]) => ({
-            key,
-            value: String(value),
-          }),
-        );
-        setSettings(settingsArr);
-      }
+      const settingsArr = Object.entries(settingsData || {}).map(
+        ([key, value]) => ({
+          key,
+          value: String(value),
+        }),
+      );
+      setSettings(settingsArr);
     } catch (err) {
       console.error("Failed to load data:", err);
     } finally {
