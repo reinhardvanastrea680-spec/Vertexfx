@@ -1683,13 +1683,20 @@ function HeroPage({ onStart, colors }) {
 }
 
 function StatsBar({ colors }) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 900);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <div
       style={{
         background: `linear-gradient(135deg, ${colors.NAVY}, ${colors.NAVY2})`,
         borderTop: `1px solid ${colors.BORDER}`,
         borderBottom: `1px solid ${colors.BORDER}`,
-        padding: "0 48px",
+        padding: isMobile ? "0 20px" : "0 48px",
         position: "relative",
         overflow: "hidden",
       }}
@@ -1710,23 +1717,26 @@ function StatsBar({ colors }) {
           maxWidth: 1200,
           margin: "0 auto",
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 0,
+          gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+          gap: isMobile ? "1px" : 0,
         }}
       >
         {stats.map((s, i) => (
           <div
             key={i}
             style={{
-              padding: "32px 0",
+              padding: isMobile ? "24px 0" : "32px 0",
               textAlign: "center",
-              borderRight: i < 3 ? `1px solid ${colors.BORDER}` : "none",
+              borderRight:
+                !isMobile && i < 3 ? `1px solid ${colors.BORDER}` : "none",
+              borderBottom:
+                isMobile && i < 2 ? `1px solid ${colors.BORDER}` : "none",
             }}
           >
             <div
               style={{
                 fontFamily: "'Cormorant Garamond', serif",
-                fontSize: 40,
+                fontSize: isMobile ? 28 : 40,
                 fontWeight: 700,
                 color: colors.GOLD,
                 lineHeight: 1,
@@ -1737,7 +1747,7 @@ function StatsBar({ colors }) {
             <div
               style={{
                 fontFamily: "'DM Sans', sans-serif",
-                fontSize: 13,
+                fontSize: isMobile ? 12 : 13,
                 color: colors.LIGHT,
                 fontWeight: 600,
                 marginTop: 6,
@@ -1748,7 +1758,7 @@ function StatsBar({ colors }) {
             <div
               style={{
                 fontFamily: "'DM Sans', sans-serif",
-                fontSize: 12,
+                fontSize: 11,
                 color: colors.MUTED,
                 marginTop: 3,
               }}
@@ -1968,7 +1978,7 @@ function MarketsSection({ colors, showToast, isLoggedIn, onOpenSignup }) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
+            gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
             gap: 2,
           }}
         >
@@ -2596,11 +2606,18 @@ function PricingSection({ onStart, colors, showToast }) {
 }
 
 function TestimonialsSection({ colors }) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 900);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <section
       style={{
         background: colors.NAVY,
-        padding: "96px 48px",
+        padding: isMobile ? "64px 20px" : "96px 48px",
         borderTop: `1px solid ${colors.BORDER}`,
       }}
     >
@@ -2621,7 +2638,7 @@ function TestimonialsSection({ colors }) {
           <h2
             style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: 48,
+              fontSize: isMobile ? 36 : 48,
               fontWeight: 700,
               color: colors.LIGHT,
               margin: "12px 0",
@@ -2633,7 +2650,7 @@ function TestimonialsSection({ colors }) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
+            gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
             gap: 24,
           }}
         >
@@ -2728,11 +2745,18 @@ function TestimonialsSection({ colors }) {
 }
 
 function CTASection({ onStart, colors }) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 900);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <section
       style={{
         background: colors.DARK_NAVY,
-        padding: "96px 48px",
+        padding: isMobile ? "64px 20px" : "96px 48px",
         borderTop: `1px solid ${colors.BORDER}`,
         position: "relative",
         overflow: "hidden",
@@ -2745,8 +2769,8 @@ function CTASection({ onStart, colors }) {
           top: "50%",
           left: "50%",
           transform: "translate(-50%,-50%)",
-          width: 500,
-          height: 500,
+          width: isMobile ? 300 : 500,
+          height: isMobile ? 300 : 500,
           opacity: 0.15,
           pointerEvents: "none",
         }}
@@ -2756,8 +2780,8 @@ function CTASection({ onStart, colors }) {
       <div
         style={{
           position: "absolute",
-          width: 500,
-          height: 500,
+          width: isMobile ? 300 : 500,
+          height: isMobile ? 300 : 500,
           borderRadius: "50%",
           background: `radial-gradient(circle, rgba(201,168,76,0.1) 0%, transparent 70%)`,
           top: "50%",
@@ -2777,7 +2801,7 @@ function CTASection({ onStart, colors }) {
         <h2
           style={{
             fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 56,
+            fontSize: isMobile ? 36 : 56,
             fontWeight: 700,
             color: colors.LIGHT,
             margin: "0 0 20px",
@@ -2804,14 +2828,22 @@ function CTASection({ onStart, colors }) {
           hidden fees — just world-class trading infrastructure at your
           fingertips.
         </p>
-        <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            gap: 16,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
           <button
             onClick={onStart}
             style={{
               background: `linear-gradient(135deg, ${colors.GOLD} 0%, #A07728 100%)`,
               border: "none",
               color: "#fff",
-              padding: "18px 52px",
+              padding: isMobile ? "14px 32px" : "18px 52px",
               borderRadius: 8,
               cursor: "pointer",
               fontFamily: "'DM Sans', sans-serif",
@@ -2864,6 +2896,13 @@ function CTASection({ onStart, colors }) {
 }
 
 function Footer({ colors, showToast }) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 900);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const scrollTo = (id) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -2882,15 +2921,15 @@ function Footer({ colors, showToast }) {
       style={{
         background: colors.TICKER_BG,
         borderTop: `1px solid ${colors.BORDER}`,
-        padding: "60px 48px 32px",
+        padding: isMobile ? "40px 20px 24px" : "60px 48px 32px",
       }}
     >
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
-            gap: 48,
+            gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr 1fr 1fr",
+            gap: 32,
             marginBottom: 48,
             paddingBottom: 48,
             borderBottom: `1px solid ${colors.BORDER}`,
