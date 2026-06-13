@@ -61,8 +61,8 @@ export const authService = {
           phone: dto.phone,
           referralCode,
           referredById,
-          status: process.env.NODE_ENV === "development" ? "active" : "pending",
-          emailVerified: process.env.NODE_ENV === "development",
+          status: "active",
+          emailVerified: true,
         },
       });
 
@@ -146,14 +146,6 @@ export const authService = {
       throw Object.assign(new Error("Invalid credentials"), {
         statusCode: 401,
       });
-
-    // Skip email verification check in development
-    if (process.env.NODE_ENV !== "development" && !user.emailVerified) {
-      throw Object.assign(
-        new Error("Please verify your email address before logging in"),
-        { statusCode: 403 },
-      );
-    }
 
     if (user.status === "suspended")
       throw Object.assign(new Error("Account suspended. Contact support."), {
