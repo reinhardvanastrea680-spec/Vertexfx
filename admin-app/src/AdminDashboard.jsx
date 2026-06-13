@@ -3021,7 +3021,14 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div style={{ background: C.bg, minHeight: "100vh" }}>
+    <div
+      style={{
+        background: C.bg,
+        minHeight: "100vh",
+        width: "100vw",
+        overflow: "hidden",
+      }}
+    >
       <TopBar
         admin={admin}
         onLogout={logout}
@@ -3043,9 +3050,11 @@ export default function AdminDashboard() {
           marginLeft: isMobile ? 0 : 260,
           paddingTop: 64,
           minHeight: "100vh",
+          height: "100%",
+          overflowY: "auto",
         }}
       >
-        <div style={{ padding: isMobile ? 16 : 24 }}>
+        <div style={{ padding: isMobile ? 16 : 24, width: "100%" }}>
           {dataLoading ? (
             <div style={{ color: C.textMuted, fontFamily: FF.sans }}>
               Loading...

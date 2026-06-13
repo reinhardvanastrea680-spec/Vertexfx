@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { authApi, adminApi } from "./api";
 
 const AuthContext = createContext();
@@ -15,19 +15,29 @@ export function AuthProvider({ children }) {
       if (res.ok) {
         const data = await res.json();
         setAdmin(data.data);
+        return true;
       }
+      return false;
     } catch (err) {
       console.error("Failed to fetch profile:", err);
+      return false;
     }
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      setAdmin({ token });
-      fetchProfile(token);
-    }
-    setIsLoading(false);
+    const initAuth = async () => {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        // Try to fetch profile, if it fails, clear everything and show login
+        const profileOk = await fetchProfile(token);
+        if (!profileOk) {
+          localStorage.removeItem("accessToken");
+          setAdmin(null);
+        }
+      }
+      setIsLoading(false);
+    };
+    initAuth();
   }, []);
 
   const login = async (email, password) => {
@@ -41,7 +51,6 @@ export function AuthProvider({ children }) {
       if (res.ok) {
         const token = data.data?.accessToken || data.accessToken;
         localStorage.setItem("accessToken", token);
-        setAdmin({ token });
         await fetchProfile(token);
         return { success: true };
       }
