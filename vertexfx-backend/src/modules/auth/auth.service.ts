@@ -24,13 +24,24 @@ import { RegisterDto, LoginDto, ResetPasswordDto } from "./auth.schemas";
 export const authService = {
   // ─── Register ──────────────────────────────────────────────────────────────
   async register(dto: RegisterDto, ipAddress: string) {
-    const existing = await prisma.user.findUnique({
+    const existingEmail = await prisma.user.findUnique({
       where: { email: dto.email },
     });
-    if (existing)
+    if (existingEmail)
       throw Object.assign(new Error("Email already registered"), {
         statusCode: 409,
       });
+
+    // Check for existing phone number if provided
+    if (dto.phone) {
+      const existingPhone = await prisma.user.findUnique({
+        where: { phone: dto.phone },
+      });
+      if (existingPhone)
+        throw Object.assign(new Error("Phone number already registered"), {
+          statusCode: 409,
+        });
+    }
 
     const passwordHash = await hashPassword(dto.password);
     const referralCode = generateReferralCode();
@@ -58,7 +69,7 @@ export const authService = {
           state: dto.state,
           postalCode: dto.postalCode,
           country: dto.country,
-          phone: dto.phone,
+          phone: dto.phone || null,
           referralCode,
           referredById,
           status: "active",
