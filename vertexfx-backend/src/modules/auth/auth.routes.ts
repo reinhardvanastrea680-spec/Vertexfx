@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authController } from './auth.controller';
-import { authLimiter } from '../../middleware/rateLimiter';
+import { authLimiter, registerLimiter } from '../../middleware/rateLimiter';
 import { validate } from '../../middleware/validate';
 import { authenticate } from '../../middleware/authenticate';
 import {
@@ -10,7 +10,7 @@ import {
 
 const router = Router();
 
-router.post('/register', authLimiter, validate(registerSchema), authController.register);
+router.post('/register', registerLimiter, validate(registerSchema), authController.register);
 router.get('/verify-email/:token', authController.verifyEmail);
 router.post('/login', authLimiter, validate(loginSchema), authController.login);
 router.post('/2fa/verify', authLimiter, validate(twoFaVerifySchema), authController.verifyTwoFA);
