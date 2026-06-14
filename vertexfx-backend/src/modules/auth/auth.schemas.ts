@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const registerSchema = z.object({
-  email: z.string().email('Invalid email address').toLowerCase(),
+  email: z.string().email('Invalid email address').toLowerCase().trim(),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
@@ -15,7 +15,7 @@ export const registerSchema = z.object({
   city: z.string().min(2).max(100),
   state: z.string().min(2).max(100),
   country: z.string().min(2).max(100),
-  phone: z.string().min(7).max(30).optional(),
+  phone: z.string().min(7).max(30).trim().optional().transform(val => val || null),
   postalCode: z.string().optional(),
   referralCode: z.string().optional(),
 });

@@ -33,7 +33,7 @@ export const authService = {
       });
 
     // Check for existing phone number if provided
-    if (dto.phone) {
+    if (dto.phone !== null) {
       const existingPhone = await prisma.user.findUnique({
         where: { phone: dto.phone },
       });
