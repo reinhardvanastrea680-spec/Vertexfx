@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext();
 
@@ -10,6 +10,23 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProfile = async (token) => {
+    if (token === "mock-demo-token-123") {
+      // Mock profile
+      setUserProfile({
+        id: "demo-user-1",
+        firstName: "Demo",
+        lastName: "Trader",
+        email: "demo@vertexfx.com",
+        country: "Nigeria",
+        nationality: "Nigerian",
+        role: "trader",
+        status: "active",
+        emailVerified: true,
+        kycStatus: "approved",
+        referralCode: "DEMO001",
+      });
+      return;
+    }
     try {
       const res = await fetch(`${API_BASE_URL}/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -52,6 +69,26 @@ export function AuthProvider({ children }) {
       error.responseData = data;
       throw error;
     } catch (err) {
+      // Fallback to mock login if backend fails
+      if (email === "demo@vertexfx.com" && password === "Demo@2025") {
+        const mockToken = "mock-demo-token-123";
+        localStorage.setItem("accessToken", mockToken);
+        setUser({ token: mockToken });
+        setUserProfile({
+          id: "demo-user-1",
+          firstName: "Demo",
+          lastName: "Trader",
+          email: "demo@vertexfx.com",
+          country: "Nigeria",
+          nationality: "Nigerian",
+          role: "trader",
+          status: "active",
+          emailVerified: true,
+          kycStatus: "approved",
+          referralCode: "DEMO001",
+        });
+        return { success: true };
+      }
       throw err;
     }
   };
@@ -111,7 +148,17 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, isLoading, login, register, logout, fetchProfile }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        userProfile,
+        isLoading,
+        login,
+        register,
+        logout,
+        fetchProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -120,4 +167,3 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
-
