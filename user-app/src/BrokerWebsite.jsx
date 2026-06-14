@@ -4060,6 +4060,13 @@ function UserDashboard({ colors, activePage, onNavigate, showToast }) {
   const [showWelcome, setShowWelcome] = useState(true);
   const [walletBalance, setWalletBalance] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 900);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   // Socket for live prices
   const {
     connected: socketConnected,
@@ -6826,7 +6833,7 @@ function UserDashboard({ colors, activePage, onNavigate, showToast }) {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1.2fr",
+                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1.2fr",
                   gap: 32,
                   alignItems: "center",
                 }}
@@ -7057,7 +7064,9 @@ function UserDashboard({ colors, activePage, onNavigate, showToast }) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(4, 1fr)",
+                gridTemplateColumns: isMobile
+                  ? "repeat(2, 1fr)"
+                  : "repeat(4, 1fr)",
                 gap: 16,
                 marginBottom: 32,
               }}
@@ -7229,7 +7238,9 @@ function UserDashboard({ colors, activePage, onNavigate, showToast }) {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gridTemplateColumns: isMobile
+                    ? "repeat(2, 1fr)"
+                    : "repeat(4, 1fr)",
                   gap: 14,
                 }}
               >
@@ -7400,7 +7411,9 @@ function UserDashboard({ colors, activePage, onNavigate, showToast }) {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gridTemplateColumns: isMobile
+                    ? "repeat(2, 1fr)"
+                    : "repeat(4, 1fr)",
                   gap: 12,
                 }}
               >
